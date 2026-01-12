@@ -97,14 +97,24 @@ Write-Host ""
 $createProject = Read-Host "ต้องการสร้างโปรเจกต์ใหม่หรือไม่? (y/n)"
 if ($createProject -eq 'y') {
     $defaultName = "my_project_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
-    $projectName = Read-Host "ชื่อโปรเจกต์ (Enter = $defaultName)"
     
-    if ([string]::IsNullOrWhiteSpace($projectName)) {
-        $projectName = $defaultName
-    }
-    
-    # แปลงชื่อให้ปลอดภัย (ลบอักขระพิเศษ)
-    $projectName = $projectName -replace '[^\w\-_]', '_'
+    # ป้องกันการใช้ชื่อ example_project
+    do {
+        $projectName = Read-Host "ชื่อโปรเจกต์ (Enter = $defaultName)"
+        
+        if ([string]::IsNullOrWhiteSpace($projectName)) {
+            $projectName = $defaultName
+        }
+        
+        # แปลงชื่อให้ปลอดภัย (ลบอักขระพิเศษ)
+        $projectName = $projectName -replace '[^\w\-_]', '_'
+        
+        # ตรวจสอบว่าไม่ใช่ชื่อ example_project
+        if ($projectName -eq "example_project") {
+            Write-Host "   ⚠️  ไม่สามารถใช้ชื่อ 'example_project' ได้ (ชื่อสงวนไว้สำหรับ template)" -ForegroundColor Red
+            $projectName = $null
+        }
+    } while ([string]::IsNullOrWhiteSpace($projectName))
     
     $projectPath = Join-Path $PSScriptRoot $projectName
     
@@ -126,7 +136,41 @@ if ($createProject -eq 'y') {
     if (-not $skipProject) {
         # สร้างโครงสร้างโฟลเดอร์
         New-Item -Path $projectPath -ItemType Directory -Force | Out-Null
-        New-Item -Path "$projectPath\.vscode" -ItemType Directory -Force | Out-Null
+        
+        # คัดลอกไฟล์จาก example_project
+        $examplePath = Join-Path $PSScriptRoot "example_project"
+        if (Test-Path $examplePath) {
+            Write-Host "   📋 คัดลอกไฟล์ตัวอย่าง..." -ForegroundColor Gray
+            
+            # คัดลอก .vscode
+            if (Test-Path "$examplePath\.vscode") {
+                Copy-Item -Path "$examplePath\.vscode" -Destination $projectPath -Recurse -Force
+            }
+            
+            # คัดลอกไฟล์ .ino
+            $inoFiles = Get-ChildItem -Path $examplePath -Filter "*.ino"
+            foreach ($file in $inoFiles) {
+                $newInoName = "$projectName.ino"
+                Copy-Item -Path $file.FullName -Destination "$projectPath\$newInoName" -Force
+                Write-Host "   ✅ สร้างไฟล์: $newInoName" -ForegroundColor Gray
+            }
+            
+            # คัดลอก README.md (ถ้ามี)
+            if (Test-Path "$examplePath\README.md") {
+                Copy-Item -Path "$examplePath\README.md" -Destination $projectPath -Force
+            }
+            
+            # อัพเดท arduino.json ให้ชื่อ sketch ตรงกับโปรเจกต์
+            $arduinoJsonPath = "$projectPath\.vscode\arduino.json"
+            if (Test-Path $arduinoJsonPath) {
+                $arduinoJson = Get-Content $arduinoJsonPath -Raw | ConvertFrom-Json
+                $arduinoJson.sketch = "$projectName.ino"
+                $arduinoJson | ConvertTo-Json -Depth 10 | Set-Content $arduinoJsonPath -Encoding UTF8
+            }
+        } else {
+            Write-Host "   ⚠️  ไม่พบ example_project สร้างโปรเจกต์เปล่า" -ForegroundColor Yellow
+            New-Item -Path "$projectPath\.vscode" -ItemType Directory -Force | Out-Null
+        }
         
         Write-Host "✅ สร้างโปรเจกต์: $projectName" -ForegroundColor Green
     }
@@ -156,18 +200,26 @@ Write-Host ""
 Write-Host "📍 ตำแหน่งที่สำคัญ:" -ForegroundColor Cyan
 Write-Host "   • Arduino Libraries: $librariesPath" -ForegroundColor Gray
 Write-Host "   • NKP_ONE Library: $nkpLibPath" -ForegroundColor Gray
-Write-Host "   • Example Project: $projectPath" -ForegroundColor Gray
-Write-Host ""
-Write-Host "🚀 ขั้นตอนถัดไป:" -ForegroundColor Cyan
-Write-Host "   1. เปิด VS Code" -ForegroundColor White
-Write-Host "   2. เปิดโฟลเดอร์: $projectPath" -ForegroundColor White
-Write-Host "   3. เลือก Board: ESP32 Dev Module" -ForegroundColor White
-Write-Host "   4. เลือก Port: COM#" -ForegroundColor White
-Write-Host "   5. กด Upload (Ctrl+Alt+U)" -ForegroundColor White
+
+if ($projectPath) {
+    Write-Host "   • โปรเจกต์ที่สร้าง: $projectPath" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "🚀 ขั้นตอนถัดไป:" -ForegroundColor Cyan
+    Write-Host "   1. เปิด VS Code" -ForegroundColor White
+    Write-Host "   2. เปิดโฟลเดอร์: $projectPath" -ForegroundColor White
+    Write-Host "   3. เลือก Board: ESP32 Dev Module" -ForegroundColor White
+    Write-Host "   4. เลือก Port: COM#" -ForegroundColor White
+    Write-Host "   5. กด Upload (Ctrl+Alt+U)" -ForegroundColor White
+} else {
+    Write-Host ""
+    Write-Host "💡 หมายเหตุ:" -ForegroundColor Cyan
+    Write-Host "   • รัน script อีกครั้งเพื่อสร้างโปรเจกต์ใหม่" -ForegroundColor White
+    Write-Host "   • หรือคัดลอก example_project ไปใช้งาน" -ForegroundColor White
+}
 Write-Host ""
 
 # เปิด VS Code (ถ้าต้องการ)
-if ($vscodePath -and (Test-Path $projectPath)) {
+if ($vscodePath -and $projectPath -and (Test-Path $projectPath)) {
     $openVSCode = Read-Host "ต้องการเปิด VS Code ตอนนี้เลยหรือไม่? (y/n)"
     if ($openVSCode -eq 'y') {
         Write-Host "🚀 กำลังเปิด VS Code..." -ForegroundColor Yellow

@@ -1,0 +1,47 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Win32",
+            "compilerPath": "C:/Users/Admin/AppData/Local/Arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/esp-13.2.0_20240530/bin/xtensa-esp32-elf-gcc.exe",
+            "compilerArgs": [
+                "-std=gnu++23",
+                "-Wpointer-arith",
+                "-fexceptions",
+                "-fstack-protector",
+                "-ffunction-sections",
+                "-fdata-sections",
+                "-fstrict-volatile-bitfields",
+                "-mlongcalls",
+                "-nostdlib",
+                "-w",
+                "-Wno-error=narrowing",
+                "-Wno-error=deprecated-declarations",
+                "-Wno-error=unused-function",
+                "-Wno-error=unused-but-set-variable",
+                "-Wno-error=unused-variable",
+                "-Wno-error=format=",
+                "-Wno-error=int-conversion",
+                "-Wno-error=sign-compare",
+                "-Wno-error=format-extra-args",
+                "-MMD",
+                "-c"
+            ],
+            "intelliSenseMode": "gcc-x64",
+            "includePath": [
+                "C:\\Users\\Admin\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.1.1\\**",
+                "C:\\Users\\Admin\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\**",
+                "${workspaceFolder}\\**",
+                "C:\\Users\\Admin\\Documents\\Arduino\\libraries\\**"
+            ],
+            "forcedInclude": [],
+            "cStandard": "c11",
+            "cppStandard": "c++23",
+            "defines": [
+                "ESP32",
+                "ARDUINO_ESP32_DEV",
+                "ARDUINO_ARCH_ESP32"
+            ]
+        }
+    ]
+}

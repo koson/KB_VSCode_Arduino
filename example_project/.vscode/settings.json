@@ -1,0 +1,9 @@
+{
+    "arduino.useArduinoCli": true,
+    "arduino.path": "C:/Program Files/Arduino IDE",
+    "arduino.commandPath": "arduino-cli.exe",
+    "C_Cpp.intelliSenseEngine": "default",
+    "files.associations": {
+        "*.ino": "cpp"
+    }
+}
